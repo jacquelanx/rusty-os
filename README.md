@@ -1,3 +1,5 @@
-to compile the crate: `cargo build --target thumbv7em-none-eabihf` because we need to compile for a bare metal target without any underlying OS
+to compile the crate: `cargo build` 
 
-then run the compiled "rusty: binary in the target/debug subfolder.
+then run the compiled "rusty-os: binary in the target/debug subfolder.
+
+create a bootable disk image: `cargo bootimage`
