@@ -21,13 +21,8 @@ pub extern "C" fn _start() -> ! {
 }
 
 
-fn test_runner(tests: &[&dyn Fn()]) {
-    unimplemented!();
-}
-
-
 #[panic_handler]
-fn panic(info: &PanicInfo) -> ! {
+fn panic(_info: &PanicInfo) -> ! {
     loop {}
 }
 
