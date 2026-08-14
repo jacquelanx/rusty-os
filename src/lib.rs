@@ -1,3 +1,8 @@
+/* Everything reusable (setup, shared functions) must live in lib.rs. Our
+main.rs and tests are all BINARY crates, and in Rust a binary crate's content
+can't be imported elsewhere, so everything we want to reuse must live in this
+library crate (not binary crate). */
+
 #![no_std]
 #![cfg_attr(test, no_main)]
 #![feature(custom_test_frameworks)]
@@ -9,6 +14,7 @@
 pub mod serial;
 pub mod vga_buffer;
 pub mod interrupts;
+pub mod gdt;
 
 
 /* Storytime... core contains the pieces of Rust that don't depend on an OS;
@@ -112,7 +118,7 @@ A panic is a Bad Thing (an unrecoverable error, like indexing out of bounds.)
 Here, the PanicInfo parameter is an object that contains the file and line 
 where the panic happened and an optional panic message. This panic() function 
 should never return so it returns the "never" type !. Note it's not return
-NOTHING, it's NEVER return.*/ 
+NOTHING, it's NEVER return. */ 
 #[cfg(test)]
 #[panic_handler]  // this is an attribute
 // the & means you've recieved a reference to PanicInfo through its address
@@ -122,7 +128,9 @@ fn panic(info: &PanicInfo) -> ! {
 }
 
 
-/* Loads interrupt initialization routine from the interrupts.rs module. */
+/* Loads interrupt initialization routine from the interrupts.rs module,
+as well as GDT initialization. */
 pub fn init() {
+    gdt::init();
     interrupts::init_idt();
 }
