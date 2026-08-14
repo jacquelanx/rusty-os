@@ -13,9 +13,13 @@ use rusty_os::println;
 pub extern "C" fn _start() -> ! {
     println!("Hello World{}", "!");
 
+    rusty_os::init();  // interrupts initialization
+    x86_64::instructions::interrupts::int3();  // invoke a breakpoint exception
+
     #[cfg(test)]
     test_main();
 
+    println!("It did not crash!");
     loop {}
 }
 

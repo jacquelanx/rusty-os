@@ -3,10 +3,12 @@
 #![feature(custom_test_frameworks)]
 #![test_runner(crate::test_runner)]
 #![reexport_test_harness_main = "test_main"]
+#![feature(abi_x86_interrupt)]
 
 
 pub mod serial;
 pub mod vga_buffer;
+pub mod interrupts;
 
 
 /* Storytime... core contains the pieces of Rust that don't depend on an OS;
@@ -98,6 +100,7 @@ so we need to define our own entry point. The linker looks for a function called
 #[cfg(test)]
 #[unsafe(no_mangle)]
 pub extern "C" fn _start() -> ! {
+    init();  // call init to set up IDT for interrupts b4 running tests
     test_main();
     loop {}
 }
@@ -116,4 +119,10 @@ NOTHING, it's NEVER return.*/
 // HOWEVER the & is NOT &mut, so you can't modify PanicInfo
 fn panic(info: &PanicInfo) -> ! { 
     test_panic_handler(info)
+}
+
+
+/* Loads interrupt initialization routine from the interrupts.rs module. */
+pub fn init() {
+    interrupts::init_idt();
 }
