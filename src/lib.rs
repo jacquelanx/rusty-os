@@ -93,7 +93,7 @@ pub fn test_panic_handler(info: &PanicInfo) -> ! {
     serial_println!("[failed]\n");
     serial_println!("Error: {}\n", info);
     exit_qemu(QemuExitCode::Failed);
-    loop {}
+    hlt_loop();
 }
 
 
@@ -108,7 +108,17 @@ so we need to define our own entry point. The linker looks for a function called
 pub extern "C" fn _start() -> ! {
     init();  // call init to set up IDT for interrupts b4 running tests
     test_main();
-    loop {}
+    hlt_loop();
+}
+
+
+/* If we do loop{} in _start, this causes the CPU to spin endlessly, causing it
+to consume nearly 100% of our CPU. What we want to do is to halt the CPU until the
+next interrupt arrives. This lets the CPU enter a sleep state in between. */
+pub fn hlt_loop() -> ! {
+    loop {
+        x86_64::instructions::hlt();
+    }
 }
 
 
@@ -133,4 +143,7 @@ as well as GDT initialization. */
 pub fn init() {
     gdt::init();
     interrupts::init_idt();
+    unsafe { interrupts::PICS.lock().initialize() };
+    // enable external interrupts so the PICs can talk to the CPU
+    x86_64::instructions::interrupts::enable();
 }
