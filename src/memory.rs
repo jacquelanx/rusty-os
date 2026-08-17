@@ -1,8 +1,56 @@
+/* LONG EXPLANATION OF PAGING. FOR MY OWN LEARNING PURPOSES ONLY!!!!!!!!!!!
+Basically, we have addresses that our programs use that might not exist 
+physically—those are called virtual memory addresses. We also have addresses 
+that physically map onto our RAM—those are called physical memory addresses. 
+We need to map virtual addresses to physical addresses using a table, but that 
+table can grow quickly in size, so we end up using a hierarchy of tables. So 
+the process ends up looking something like:
+
+Virtual address:  0x1234 —> page tables —> Physical address: 0xA834 
+Virtual address:  0x1234 —> L4 —> L3 —> L2 —> L1 —> Physical address: 0xA834 
+
+Each of these pages and frames is one chunk in the diagram!
+Virtual memory					Physical RAM
+Page 0:  [4096 bytes]				Frame 0:  [4096 bytes]
+Page 1:  [4096 bytes]				Frame 1:  [4096 bytes]
+Page 2:  [4096 bytes]				Frame 2:  [4096 bytes]
+Page 3:  [4096 bytes]				Frame 3:  [4096 bytes]
+
+Page Table
+Entry 0 → Physical frame 17, can read and write
+Entry 1 → Physical frame 4, can read only
+Entry 2 → Physical frame 91, etc…
+Entry 3 → Physical frame 12
+
+Virtual page 2 maps to entry 2. Entry 2 says virtual page 2 → physical frame 91.
+
+Now some number crunching: each page table is 4096 bytes. Each entry in a page 
+table has 8 bytes, so each page table has 512 entries. We start at L4, our first 
+table (the physical address of this table is specified by the CR3 register.) 
+You want to choose one of these entries—how many bits do you need? You need NINE 
+because 2^9 = 512. Now you have 4 levels, so you need 9 bits each time to move 
+from one level to the next. You start at L4; your first 9 bits tells you where 
+your L3 table is in physical memory plus a bunch of flags, your next 9 bits tell 
+you where your L2 table is + flags… etc. In your tables, EVERY ADDRESS IS PHYSICAL. 
+Finally, when you’re at L1, accessing that entry in L1 gives you the page you want, 
+but you need 12 additional bits to specify which BYE you want within that page 
+because each page is 4096 bytes. These last 12 bits are called the OFFSET.
+
+We need: 9 bits to choose an L4 entry, 9 bits to choose an L3 entry, 9 bits to 
+choose an L2 entry, 9 bits to choose an L1 entry, and 12 bits to choose a byte 
+inside the final page. 9 + 9 + 9 + 9 + 12 = 48 bits. So a typical address within 
+x84 is 48 bits—when the CPU accesses/translates a virtual memory address, it just 
+does bit ops (like masking) on the 48 bit address to get the information it needs 
+to index into each table/page. So bits 0–11 are the offset: which byte inside the 
+final page; bits 12–20 are the L1 index; bits 21–29 —are the L2 index… bits 39–47 
+are the L4 index, bits 48–63 are not address bits at all.
+*/
+
 use bootloader::bootinfo::MemoryMap;
 use bootloader::bootinfo::MemoryRegionType;
 use x86_64::{
-    PhysAddr,
-    structures::paging::{Page, PageTable, VirtAddr, PhysFrame, Mapper, 
+    PhysAddr, VirtAddr,
+    structures::paging::{Page, PageTable, PhysFrame, Mapper, 
         Size4KiB, FrameAllocator, OffsetPageTable}
 };
 
