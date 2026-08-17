@@ -7,10 +7,12 @@
 
 use core::panic::PanicInfo;
 use rusty_os::println;
+use bootloader::{BootInfo, entry_point};
+
+entry_point!(kernel_main);
 
 
-#[unsafe(no_mangle)]
-pub extern "C" fn _start() -> ! {
+fn kernel_main(boot_info: &'static BootInfo) -> ! {
     println!("Hello World{}", "!");
 
     rusty_os::init();  // interrupts initialization

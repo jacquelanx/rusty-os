@@ -15,6 +15,7 @@ pub mod serial;
 pub mod vga_buffer;
 pub mod interrupts;
 pub mod gdt;
+pub mod memory;
 
 
 /* Storytime... core contains the pieces of Rust that don't depend on an OS;
@@ -22,6 +23,12 @@ STD is built on core. Inside the core crate is a module called panic, which
 contains a struct called PanicInfo. The use keyword is for ease of importing.
 */
 use core::panic::PanicInfo;
+
+#[cfg(test)]
+use bootloader::{entry_point, BootInfo};
+
+#[cfg(test)]
+entry_point!(test_kernel_main);
 
 
 /* In exit_qemu(), we create a new I/O Port at 0xf4 (the iobase parameter).
@@ -102,10 +109,13 @@ pub fn test_panic_handler(info: &PanicInfo) -> ! {
 by the _start item, which calls the main function). We don't have access to that
 so we need to define our own entry point. The linker looks for a function called
 `_start` by default.
+Here, we take in a BootInfo object that tells our bootloader information about
+the current physical memory. To ensure the signature is always type correct, we
+enforce it with the entry_point macro, hence changing the start function's name
+from _start to this in both main.rs and lib.rs.
 */
 #[cfg(test)]
-#[unsafe(no_mangle)]
-pub extern "C" fn _start() -> ! {
+fn test_kernel_main(_boot_info: &'static BootInfo) -> ! {
     init();  // call init to set up IDT for interrupts b4 running tests
     test_main();
     hlt_loop();
