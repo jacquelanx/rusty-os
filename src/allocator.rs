@@ -7,13 +7,16 @@ use x86_64::{
     },
     VirtAddr,
 };
+use fixed_size_block::FixedSizeBlockAllocator;
 
 
 // This attribute indicates which allocator instance to use as the global allocator.
 #[global_allocator]
-static ALLOCATOR: LockedHeap = LockedHeap::empty();
+static ALLOCATOR: Locked<FixedSizeBlockAllocator> = Locked::new(
+    FixedSizeBlockAllocator::new());
 
 
+pub mod fixed_size_block;
 pub const HEAP_START: usize = 0x_4444_4444_0000;
 pub const HEAP_SIZE: usize = 100 * 1024; // 100 KiB
 
@@ -56,17 +59,4 @@ pub fn init_heap(
     }
 
     Ok(())
-}
-
-
-pub struct Dummy;
-
-unsafe impl GlobalAlloc for Dummy {
-    unsafe fn alloc(&self, _layout: Layout) -> *mut u8 {
-        null_mut()
-    }
-
-    unsafe fn dealloc(&self, _ptr: *mut u8, _layout: Layout) {
-        panic!("dealloc should be never called")
-    }
 }
